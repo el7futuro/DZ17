@@ -100,6 +100,59 @@ class Director(db.Model):
     __tablename__ = 'director'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
+    
+    
+class DirectorSchema(Schema):
+    id = fields.Int()
+    name = fields.Str()
+   
+
+
+director_schema = DirectorSchema()
+directors_schema = DirectorSchema(many=True)
+
+
+director_ns = api.namespace('')
+
+@director_ns.route('/directors')
+class directorsView(Resource):
+    def get(self):
+        query = Director.query
+        return directors_schema.dump(query.all()), 200
+
+    def post(self):
+        req_json = request.json
+        new_director = Director(**req_json)
+        with db.session.begin():
+            db.session.add(new_director)
+        return "", 201
+
+
+
+@director_ns.route('/directors/<int:uid>')
+class directorView(Resource):
+
+    def get(self, uid: int):    # Получение данных
+        try:
+            director = Director.query.get(uid)
+            return director_schema.dump(director), 200
+        except Exception as e:
+            return "", 404
+
+    def put(self, uid):  # Замена данных
+        director = Director.query.get(uid)
+        req_json = request.json
+        director.name = req_json.get("name")
+
+        db.session.add(director)
+        db.session.commit()
+        return "", 204
+
+    def delete(self, uid: int):
+        director = Director.query.get(uid)
+        db.session.delete(director)
+        db.session.commit()
+        return "", 204
 
 
 class Genre(db.Model):
@@ -107,6 +160,56 @@ class Genre(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
 
+
+class GenreSchema(Schema):
+    id = fields.Int()
+    name = fields.Str()
+
+
+genre_schema = GenreSchema()
+genres_schema = GenreSchema(many=True)
+
+genre_ns = api.namespace('')
+
+
+@genre_ns.route('/genres')
+class genresView(Resource):
+    def get(self):
+        query = Genre.query
+        return genres_schema.dump(query.all()), 200
+
+    def post(self):
+        req_json = request.json
+        new_genre = Genre(**req_json)
+        with db.session.begin():
+            db.session.add(new_genre)
+        return "", 201
+
+
+@genre_ns.route('/genres/<int:uid>')
+class genreView(Resource):
+
+    def get(self, uid: int):  # Получение данных
+        try:
+            genre = Genre.query.get(uid)
+            return genre_schema.dump(genre), 200
+        except Exception as e:
+            return "", 404
+
+    def put(self, uid):  # Замена данных
+        genre = Genre.query.get(uid)
+        req_json = request.json
+        genre.name = req_json.get("name")
+
+        db.session.add(genre)
+        db.session.commit()
+        return "", 204
+
+    def delete(self, uid: int):
+        genre = Genre.query.get(uid)
+        db.session.delete(genre)
+        db.session.commit()
+        return "", 204
 
 
 if __name__ == '__main__':
